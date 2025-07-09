@@ -91,3 +91,8 @@ HTTP_REQUEST_TIMEOUT = 10
 INSTALLED_APPS += [
     'xabber_microservice.api',
 ]
+
+XMPP_SERVER_DB = ''
+
+# JID VALIDATION
+INSTALLED_APPS += ['jid_validation']

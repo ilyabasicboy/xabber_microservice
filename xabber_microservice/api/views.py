@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.models import User
 
 from xabber_microservice.api.mixins import AdminMethodMixin
 from xabber_microservice.api.models import Account
@@ -54,6 +53,7 @@ class WebhookView(View, AdminMethodMixin):
         
         # Get max message retention from attributes
         message_retention = 0
+        unlimited = False
         for attribute in attributes:
             attribute_message_retention = attribute.get('message_retention', 0)
 
@@ -64,7 +64,8 @@ class WebhookView(View, AdminMethodMixin):
                 pass
 
             if attribute_message_retention == 'Unlimited':
-                message_retention = attribute_message_retention
+                message_retention = 0
+                unlimited = True
                 break
             elif isinstance(attribute_message_retention, int) and attribute_message_retention > message_retention:
                 message_retention = attribute_message_retention
@@ -73,14 +74,11 @@ class WebhookView(View, AdminMethodMixin):
             return False, {"message": "Jid is required"}
 
         try:
-            user, created = User.objects.get_or_create(
-                username=jid
-            )
             Account.objects.update_or_create(
-                user=user,
                 jid=jid,
                 defaults={
-                    "message_retention": message_retention
+                    "message_retention": message_retention,
+                    "unlimited": unlimited
                 }
             )
         except Exception:
@@ -96,11 +94,7 @@ class WebhookView(View, AdminMethodMixin):
             return False, {"message": "Jid is required"}
 
         try:
-            user = User.objects.filter(
-                username=jid
-            ).delete()
             Account.objects.filter(
-                user=user,
                 jid=jid
             ).delete()
         except Exception:
